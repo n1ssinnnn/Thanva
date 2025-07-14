@@ -1,0 +1,37 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#bg-video {
+    position: fixed;
+    top : 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: -1;
+}
+
+body {
+    cursor: url('/static/normal_transparent.png'), auto;
+    overflow: hidden;
+    margin: 0;
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    z-index: 1;
+    padding: 10vh 6vw; 
+    gap: 5vh; 
+}
+
+.menu img {
+    width: 13vw;
+    height: auto;
+    cursor: url('/static/point_transparent.png'), pointer;
+}
+
+

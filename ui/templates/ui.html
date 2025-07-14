@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checking Answer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='ui.css') }}">
+</head>
+<body>
+    <video autoplay muted loop id="bg-video">
+        <source src="/static/bg.mp4" type="video/mp4">
+    </video>
+
+    <audio loop hidden id="bgm">
+        <source src="{{ url_for('static', filename='bgm.mp3') }}" type="audio/mpeg">
+    </audio>
+
+    <script>
+        window.addEventListener('click', function () {
+            const audio = document.getElementById('bgm');
+            audio.volume = 0.025;
+            audio.play();
+        }, { once: true });
+    </script>
+    
+    <div class="menu">
+        <img class="menu-button" src="/static/check_button.png" alt="check_button">
+        <img class="menu-button" src="/static/myscore_button.png" alt="myscore_button">
+        <img class="menu-button" src="/static/setting_button.png" alt="setting_button">
+        <img class="menu-button" src="/static/credit_button.png" alt="credit_button">
+    </div>
+    
+</body>
+</html>

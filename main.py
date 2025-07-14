@@ -2,6 +2,7 @@ import cv2
 import pytesseract
 import numpy as np
 import function as fn
+import DB as db
 
 # Path
 answer_img_path = "answer_sheet/20250529110230_002.jpg"
@@ -11,11 +12,10 @@ student_img_path = "answer_sheet/20250529110230_001.jpg"
 student_answer_color = cv2.imread(student_img_path)
 
 # อ่านคำตอบจาก user,correct
-from function import load_extract_anwers
-user_answers, correct_answers = load_extract_anwers(student_img_path, answer_img_path)
+user_answers, correct_answers = fn.load_extract_anwers(student_img_path, answer_img_path)
 
-print(user_answers)
-print(correct_answers)
+# print(user_answers)
+# print(correct_answers)
  
 
 # STEP 3: ตรวจคำตอบ
@@ -33,3 +33,5 @@ print("คะแนน:", score)
 cv2.imshow("Result", final_img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
+db.insert_answer("Natthanon", 66991011, "Math", user_answers)

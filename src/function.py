@@ -1,5 +1,8 @@
 import cv2
+import pytesseract
 import numpy as np
+
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 # ขนาดและช่องว่าง
 bubble_w = 36
@@ -104,17 +107,203 @@ def score_answers_by_group(user_answers, correct_answers):
 
     return score, results
 
+def extract_info_fields(img_gray):
+    fields = {
+        "name": (236, 357, 499, 55),
+        "exam_date": (391, 500, 314, 53),
+        "subject": (170, 420, 530, 65),
+        "room": (234, 563, 176, 64),
+        "seat_code": (569,574,130,49),
+    }
+
+    info = {}
+    for key, (x, y, w, h) in fields.items():
+        roi = img_gray[y:y+h, x:x+w]
+        #if roi.size == 0:
+        #    info[key] = ""
+        #    print(f"Warning: ROI for '{key}' is empty or out of bounds.")
+        #    continue                                                       *****
+        if roi.ndim == 3:               
+            roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        roi = cv2.resize(roi, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+        roi = cv2.GaussianBlur(roi, (3, 3), 0)
+        _, roi = cv2.threshold(roi, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        text = pytesseract.image_to_string(roi, config='--psm 7 -l eng+tha')
+        clean_text = text.strip()
+        #if not clean_text:
+        #    print(f"Warning: No text detected for '{key}'.")               *****
+        info[key] = clean_text
+
+    return info
+
+omr_exam_digit_boxes = {
+    'exam_digit_1': (127, 803, 42, 489),
+    'exam_digit_2': (170, 803, 42, 489),
+    'exam_digit_3': (218, 802, 43, 483),
+}
+omr_student_digit_boxes = {
+    'student_digit_1': (291, 801, 42, 484),
+    'student_digit_2': (336, 801, 42, 484),
+    'student_digit_3': (385, 801, 42, 484),
+    'student_digit_4': (432, 801, 42, 484),
+    'student_digit_5': (477, 801, 42, 484),
+    'student_digit_6': (525, 801, 42, 484),
+    'student_digit_7': (570, 801, 42, 484),
+    'student_digit_8': (619, 801, 42, 484),
+    'student_digit_9': (664, 801, 42, 484),
+}
+
+def extract_written_numbers_fields(img_input): 
+    # แปลงเป็น grayscale ถ้ายังไม่ใช่
+    if img_input.ndim == 3:
+        img_gray = cv2.cvtColor(img_input, cv2.COLOR_BGR2GRAY)
+    else:
+        img_gray = img_input.copy()
+
+    number_fields = {
+        "exam_digit_1": (124, 727, 41, 63),
+        "exam_digit_2": (170, 726, 41, 63),
+        "exam_digit_3": (220, 726, 41, 63),
+        "student_digit_1": (288, 726, 41, 63),
+        "student_digit_2": (335, 726, 41, 63),
+        "student_digit_3": (382, 726, 41, 63),
+        "student_digit_4": (429, 726, 41, 63),
+        "student_digit_5": (475, 726, 41, 63),
+        "student_digit_6": (523, 726, 41, 63),
+        "student_digit_7": (569, 726, 41, 63),
+        "student_digit_8": (616, 726, 41, 63),
+        "student_digit_9": (663, 726, 41, 63)
+    }
+
+
+
+    digits = {}
+    for key, (x, y, w, h) in number_fields.items():
+        roi = img_gray[y:y+h, x:x+w]
+        #if roi.size == 0:
+        #   print(f"Warning: ROI for '{key}' is empty or out of bounds.")
+        #    digits[key] = "?"
+        #    continue                                                          *****
+        roi = cv2.resize(roi, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+        roi = cv2.GaussianBlur(roi, (3, 3), 0)
+        _, roi = cv2.threshold(roi, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # cv2.imwrite(f"debug_{key}.png", roi)  # สำหรับ debug
+        text = pytesseract.image_to_string(
+            roi,
+            config='--psm 10 -l eng --oem 3 -c tessedit_char_whitelist=0123456789'
+        )
+        value = text.strip()
+        #if not value:
+        #   print(f"Warning: No digit detected for '{key}'.")           *****
+        digits[key] = value if value else "?"
+
+    exam_number = ''.join([digits.get(f'exam_digit_{i}', '?') for i in range(1, 4)])
+    student_code = ''.join([digits.get(f'student_digit_{i}', '?') for i in range(1, 10)])
+
+    omr_exam_digits = extract_omr_digits(img_gray, omr_exam_digit_boxes, min_fill_ratio=0.3)
+    omr_student_digits = extract_omr_digits(img_gray, omr_student_digit_boxes, min_fill_ratio=0.3)
+    omr_exam_number = ''.join([omr_exam_digits.get(f'exam_digit_{i}', '?') for i in range(1, 4)])
+    omr_student_code = ''.join([omr_student_digits.get(f'student_digit_{i}', '?') for i in range(1, 10)])
+
+    return {
+        "รหัสวิชา": omr_exam_number,           # ใช้ค่าจาก OMR
+        "รหัสประจำตัวผู้สอบ": omr_student_code,           # ใช้ค่าจาก OMR
+        "รหัสวิชา_OCR": exam_number,           # เก็บค่า OCR เดิมไว้
+        "รหัสประจำตัวผู้สอบ_OCR": student_code            # เก็บค่า OCR เดิมไว้
+    }
+
+def extract_omr_digits(img_gray, digit_boxes, threshold=150, min_fill_ratio=0.2):
+    digits = {}
+    for key, (x, y, w, h) in digit_boxes.items():
+        cell_height = h // 10
+        max_fill, selected_digit = 0, None
+        for i in range(10):
+            y_i = y + i * cell_height
+            roi = img_gray[y_i:y_i + cell_height, x:x + w]
+            _, binary = cv2.threshold(roi, threshold, 255, cv2.THRESH_BINARY_INV)
+            fill = cv2.countNonZero(binary)
+            if fill > max_fill:
+                max_fill = fill
+                selected_digit = i
+        # ถ้า max_fill น้อยกว่าค่าที่กำหนด (เช่น ไม่มีฝนจริง)
+        if max_fill < (w * cell_height * min_fill_ratio):
+            digits[key] = ""
+        else:
+            digits[key] = str(selected_digit)
+    return digits
+
+
+def merge_omr_ocr_field(omr: str, ocr: str) -> str:
+    # ถ้า ocr เป็น ? ให้เว้นว่าง ไม่เติมเลข omr
+    result = ""
+    for o, c in zip(omr, ocr):
+        if c == "?":
+            continue  # ข้ามหลักที่เป็น ?
+        else:
+            result += c
+    # ถ้า ocr สั้นกว่า omr
+    if len(omr) > len(ocr):
+        result += omr[len(ocr):]
+    return result
+
+def get_final_written_numbers(img_input):
+    written_numbers = extract_written_numbers_fields(img_input)
+    final = {}
+    # รหัสวิชา: ใช้ OMR ทั้งหมด
+    final["รหัสวิชา"] = written_numbers.get("รหัสวิชา", "")
+    # รหัสประจำตัวผู้สอบ: ตัดหลักซ้ายสุด
+    omr_student = written_numbers.get("รหัสประจำตัวผู้สอบ", "")
+    final["รหัสประจำตัวผู้สอบ"] = omr_student[1:] if len(omr_student) > 1 else ""
+    return final
+
+def scan_digits_from_boxes(img_gray, boxes_dict, num_choices=10, threshold=150):
+    digits = []
+    for key in sorted(boxes_dict.keys()):
+        x, y, w, h = boxes_dict[key]
+        cell_height = h // num_choices
+        max_fill, selected_digit = 0, 0
+
+        for i in range(num_choices):
+            y_i = y + i * cell_height
+            roi = img_gray[y_i:y_i + cell_height, x:x + w]
+            _, binary = cv2.threshold(roi, threshold, 255, cv2.THRESH_BINARY_INV)
+            fill = cv2.countNonZero(binary)
+
+            if fill > max_fill and fill > (w * cell_height * 0.5):
+                max_fill = fill
+                selected_digit = i
+
+        digits.append(str(selected_digit))
+
+    return ''.join(digits)
+
+def clean_exam_info(text: str) -> str:
+    # ลบ { } ;
+    return text.replace('{', '').replace('}', '').replace(';', '').replace('|', '').strip()
+
+def extract_student_info(img_gray):
+    info = extract_info_fields(img_gray)
+    return {
+        "ชื่อผู้สอบ": info.get("name", ""),
+        "วิชา": info.get("subject", ""),
+        "วันที่สอบ": info.get("exam_date", ""),
+        "ห้องสอบ": info.get("room", ""),
+    }
+
 # โหลดภาพ
 def load_extract_anwers(student_path, answer_path):
-    import src.function as fn
 
-    # โหลดภาพเป็น grayscale
     student_answer = cv2.imread(student_path, cv2.IMREAD_GRAYSCALE)
     answer = cv2.imread(answer_path, cv2.IMREAD_GRAYSCALE)
 
-    # อ่านคำตอบจากภาพ
-    user_answers = fn.extract_user_answers(student_answer)
-    correct_answers = fn.extract_user_answers(answer)
+    if student_answer is None:
+        raise ValueError(f"❌ Failed to load student image at path: {student_path}")
+    if answer is None:
+        raise ValueError(f"❌ Failed to load answer image at path: {answer_path}")
+
+    user_answers = extract_user_answers(student_answer)
+    correct_answers = extract_user_answers(answer)
 
     return user_answers, correct_answers
+
 

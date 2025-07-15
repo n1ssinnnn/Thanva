@@ -2,10 +2,11 @@ import cv2
 import pytesseract
 import numpy as np
 import src.function as fn
+import src.Reg_Log as rl
 
 # Path
-answer_img_path = "C:/Users/ASUS/Downloads/answer sheet/20250529110230_003.jpg"
-student_img_path = "C:/Users/ASUS/Downloads/answer sheet/20250529110230_006.jpg"
+answer_img_path = "answer_sheet/20250529110230_002.jpg"
+student_img_path = "answer_sheet/20250529110230_001.jpg"
 
 # โหลดภาพสี (ไว้ไฮไลท์)
 student_answer_color = cv2.imread(student_img_path)

@@ -51,3 +51,5 @@ print("รหัสประจำตัวผู้สอบ:", student_code)
 cv2.imshow("Result", final_img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
+print("จบการทำงาน")

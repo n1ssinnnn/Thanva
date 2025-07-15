@@ -1,8 +1,8 @@
 import cv2
 import pytesseract
 import numpy as np
-from src import function as fn
-from database import DB as db
+import src.function as fn
+import src.Reg_Log as rl
 
 # Path
 answer_img_path = "answer_sheet/20250529110230_002.jpg"
@@ -26,10 +26,11 @@ flags = fn.grade_answers(user_answers, correct_answers)
 final_img = fn.highlight_per_question_by_answer(student_answer_color, flags)
 
 score, results = fn.score_answers_by_group(user_answers, correct_answers)
-print("คะแนน:", score)
+# print("คะแนน:", score)
 # print("ผลแต่ละข้อ:", results)
 
 # แสดงผล
-cv2.imshow("Result", final_img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+# cv2.imshow("Result", final_img)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
+

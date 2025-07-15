@@ -2,7 +2,6 @@ import cv2
 import pytesseract
 import numpy as np
 import function as fn
-import DB as db
 
 # Path
 answer_img_path = "answer_sheet/20250529110230_002.jpg"

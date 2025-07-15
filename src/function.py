@@ -106,7 +106,7 @@ def score_answers_by_group(user_answers, correct_answers):
 
 # โหลดภาพ
 def load_extract_anwers(student_path, answer_path):
-    import function as fn
+    import src.function as fn
 
     # โหลดภาพเป็น grayscale
     student_answer = cv2.imread(student_path, cv2.IMREAD_GRAYSCALE)

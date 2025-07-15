@@ -1,7 +1,8 @@
 import cv2
 import pytesseract
 import numpy as np
-import function as fn
+from src import function as fn
+from database import DB as db
 
 # Path
 answer_img_path = "answer_sheet/20250529110230_002.jpg"
@@ -32,5 +33,3 @@ print("คะแนน:", score)
 cv2.imshow("Result", final_img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-
-db.insert_answer("Natthanon", 66991011, "Math", user_answers)

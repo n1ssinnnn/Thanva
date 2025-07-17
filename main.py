@@ -6,7 +6,7 @@ import src.Reg_Log as rl
 
 # Path
 answer_img_path = "answer_sheet/20250529110230_002.jpg"
-student_img_path = "answer_sheet/20250529110230_001.jpg"
+student_img_path = "answer_sheet/20250529110230_014.jpg"
 
 # โหลดภาพสี (ไว้ไฮไลท์)
 student_answer_color = cv2.imread(student_img_path)
@@ -29,7 +29,7 @@ print("คะแนน:", score)
 
 student_info = fn.extract_student_info(student_answer_color)
 for key, value in student_info.items():
-    if key in ["วิชา", "ห้องสอบ"]:
+    if key in ["วิชา", "ห้องสอบ", "ชื่อผู้สอบ"]:
         value = fn.clean_exam_info(value)
     print(f"{key}: {value}")
 
@@ -51,5 +51,3 @@ print("รหัสประจำตัวผู้สอบ:", student_code)
 cv2.imshow("Result", final_img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-
-print("จบการทำงาน")

@@ -206,10 +206,10 @@ def extract_written_numbers_fields(img_input):
     omr_student_code = ''.join([omr_student_digits.get(f'student_digit_{i}', '?') for i in range(1, 10)])
 
     return {
-        "รหัสวิชา": omr_exam_number,           # ใช้ค่าจาก OMR
-        "รหัสประจำตัวผู้สอบ": omr_student_code,           # ใช้ค่าจาก OMR
-        "รหัสวิชา_OCR": exam_number,           # เก็บค่า OCR เดิมไว้
-        "รหัสประจำตัวผู้สอบ_OCR": student_code            # เก็บค่า OCR เดิมไว้
+        "subject_id": omr_exam_number,           # ใช้ค่าจาก OMR
+        "student_id": omr_student_code,           # ใช้ค่าจาก OMR
+        "subject_id_ocr": exam_number,           # เก็บค่า OCR เดิมไว้
+        "student_id_ocr": student_code            # เก็บค่า OCR เดิมไว้
     }
 
 def extract_omr_digits(img_gray, digit_boxes, threshold=150, min_fill_ratio=0.2):
@@ -234,7 +234,7 @@ def extract_omr_digits(img_gray, digit_boxes, threshold=150, min_fill_ratio=0.2)
 
 
 def merge_omr_ocr_field(omr: str, ocr: str) -> str:
-    # ถ้า ocr เป็น ? ให้เว้นว่าง ไม่เติมเลข omr
+    # ถ้า ocr เป็น ? ให้เว้นว่าง ไม่เติมเลข omr                     <ตอนนี้ยังไม่ได้ใช้ function นี้>
     result = ""
     for o, c in zip(omr, ocr):
         if c == "?":
@@ -250,10 +250,10 @@ def get_final_written_numbers(img_input):
     written_numbers = extract_written_numbers_fields(img_input)
     final = {}
     # รหัสวิชา: ใช้ OMR ทั้งหมด
-    final["รหัสวิชา"] = written_numbers.get("รหัสวิชา", "")
-    # รหัสประจำตัวผู้สอบ: ตัดหลักซ้ายสุด
-    omr_student = written_numbers.get("รหัสประจำตัวผู้สอบ", "")
-    final["รหัสประจำตัวผู้สอบ"] = omr_student[1:] if len(omr_student) > 1 else ""
+    final["subject_id"] = written_numbers.get("subject_id", "")
+    # student_id: remove first digit
+    omr_student = written_numbers.get("student_id", "")
+    final["student_id"] = omr_student[1:] if len(omr_student) > 1 else ""
     return final
 
 def scan_digits_from_boxes(img_gray, boxes_dict, num_choices=10, threshold=150):
@@ -278,16 +278,16 @@ def scan_digits_from_boxes(img_gray, boxes_dict, num_choices=10, threshold=150):
     return ''.join(digits)
 
 def clean_exam_info(text: str) -> str:
-    # ลบ { } ;
+    # ลบ { } ; |
     return text.replace('{', '').replace('}', '').replace(';', '').replace('|', '').strip()
 
 def extract_student_info(img_gray):
     info = extract_info_fields(img_gray)
     return {
-        "ชื่อผู้สอบ": info.get("name", ""),
-        "วิชา": info.get("subject", ""),
-        "วันที่สอบ": info.get("exam_date", ""),
-        "ห้องสอบ": info.get("room", ""),
+        "student_name": info.get("name", ""),
+        "subject_name": info.get("subject", ""),
+        "date": info.get("exam_date", ""),
+        "room": info.get("room", ""),
     }
 
 # โหลดภาพ
@@ -307,3 +307,69 @@ def load_extract_anwers(student_path, answer_path):
     return user_answers, correct_answers
 
 
+import os
+import cv2
+import src.function as fn
+
+def process_exam(student_img_path, answer_img_path):
+    # โหลดภาพสี (ไว้ไฮไลท์)
+    student_answer_color = cv2.imread(student_img_path)
+
+    # อ่านคำตอบจาก user,correct
+    user_answers, correct_answers = fn.load_extract_anwers(student_img_path, answer_img_path)
+
+    #print(user_answers)
+    #print(correct_answers)
+
+    # STEP 3: ตรวจคำตอบ
+    flags = fn.grade_answers(user_answers, correct_answers)
+    # print("Flags:", flags)
+
+    # STEP 4: Highlight
+    final_img = fn.highlight_per_question_by_answer(student_answer_color, flags)
+
+
+    score, results = fn.score_answers_by_group(user_answers, correct_answers)
+
+    student_info = fn.extract_student_info(student_answer_color)
+    student_name = fn.clean_exam_info(student_info.get("student_name", ""))
+    subject_name = fn.clean_exam_info(student_info.get("subject_name", ""))
+    date = fn.clean_exam_info(student_info.get("date", ""))
+    room = fn.clean_exam_info(student_info.get("room", ""))
+
+    written_numbers = fn.extract_written_numbers_fields(student_answer_color)
+    final_numbers = fn.get_final_written_numbers(student_answer_color)
+    subject_id = fn.clean_exam_info(final_numbers["subject_id"])
+    student_id = fn.clean_exam_info(final_numbers["student_id"])
+    seat = student_id[-2:] if len(student_id) >= 2 else student_id
+
+    print(f"student name: {student_name}")
+    print(f"subject: {subject_name}")
+    print(f"date: {date}")
+    print(f"room: {room}")
+    print(f"seat: A{seat}")
+    print(f"subject ID: {subject_id}")
+    print(f"student ID: {student_id}")
+    print(f"score: {score}")
+
+
+    cv2.imshow("Result", final_img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    save_highlighted_sheet(final_img, student_img_path)
+
+def save_highlighted_sheet(img, original_path):
+    """
+    Save the highlighted sheet image to the 'highlighted_sheet' folder with a filename based on the original image.
+    """
+    folder = "highlighted_sheet"
+    os.makedirs(folder, exist_ok=True)
+    base = os.path.basename(original_path)
+    name, ext = os.path.splitext(base)
+    save_path = os.path.join(folder, f"{name}_highlighted{ext}")
+    cv2.imwrite(save_path, img)
+    print(f"Highlighted sheet saved to: {save_path}")
+
+if __name__ == "__main__":
+    process_exam(student_img_path, answer_img_path)

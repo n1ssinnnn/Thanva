@@ -1,19 +1,33 @@
+/* setting */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+.hidden {
+    display: none;
+}
+
+@font-face {
+    font-family: 'Font';
+    src: url('/static/fonts/Font.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* background */
 #bg-video {
     position: fixed;
     top : 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: 100vh;  
     object-fit: cover;
     z-index: -1;
 }
 
+/* body */
 body {
     cursor: url('/static/normal_transparent.png'), auto;
     overflow: hidden;
@@ -23,9 +37,10 @@ body {
 .menu {
     display: flex;
     flex-direction: column;
-    z-index: 1;
     padding: 10vh 6vw; 
-    gap: 5vh; 
+    gap: 5vh;
+    z-index: 1;
+    width: 25vw;
 }
 
 .menu img {
@@ -34,4 +49,89 @@ body {
     cursor: url('/static/point_transparent.png'), pointer;
 }
 
+/* check menu */
+.check {
+    position: fixed;
+    top: 3vh;
+    left: 22vw;
+    z-index: 1;
+}
 
+.check_content {
+    position: relative;
+}
+
+.check_menu {
+    width: 75vw;
+    height: auto;
+}
+
+.insert_button {
+    position: absolute;
+    top: 55%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    cursor: url('/static/point_transparent.png'), pointer;
+}
+
+.confirm_button {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 25%;
+    height: auto;
+    cursor: url('/static/point_transparent.png'), pointer;
+}
+
+.uploaded_image {
+    position: absolute;
+    top: 34%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 37%;
+    height: auto;
+    border: 3px solid white;
+    border-radius: 1rem;
+    box-shadow: 0 0 10px #fff;
+}
+
+/* score menu */
+.score {
+    position: fixed;
+    top: 3vh;
+    left: 22vw;
+    z-index: 1;
+}
+
+.score_content {
+    position: relative;
+}
+
+.score_menu {
+    width: 75vw;
+    height: auto;
+}
+
+.studentid-box {
+    position: absolute;
+    top: 48%;
+    left: 68%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Font', sans-serif;
+}
+
+.studentid-box input,
+.studentid-box textarea {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    padding: 1rem;
+    width: 30vw;
+    font-size: 3rem;
+    font-family: inherit;
+    resize: none; /* ปิด resize ถ้าใช้ textarea */
+}

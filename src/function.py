@@ -2,7 +2,11 @@ import cv2
 import pytesseract
 import numpy as np
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# For PP only
+# pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+#For MacOS (Nay, OHm)
+pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
 
 # ขนาดและช่องว่าง
 bubble_w = 36
@@ -371,5 +375,5 @@ def save_highlighted_sheet(img, original_path):
     cv2.imwrite(save_path, img)
     print(f"Highlighted sheet saved to: {save_path}")
 
-if __name__ == "__main__":
-    process_exam(student_img_path, answer_img_path)
+# if __name__ == "__main__":
+#     process_exam(student_img_path, answer_img_path)

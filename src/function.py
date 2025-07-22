@@ -1,6 +1,7 @@
 import cv2
 import pytesseract
 import numpy as np
+import database.DB_Function as db
 
 # For PP only
 # pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -316,22 +317,14 @@ import cv2
 import src.function as fn
 
 def process_exam(student_img_path, answer_img_path):
-    # โหลดภาพสี (ไว้ไฮไลท์)
+
     student_answer_color = cv2.imread(student_img_path)
 
-    # อ่านคำตอบจาก user,correct
     user_answers, correct_answers = fn.load_extract_anwers(student_img_path, answer_img_path)
 
-    #print(user_answers)
-    #print(correct_answers)
-
-    # STEP 3: ตรวจคำตอบ
     flags = fn.grade_answers(user_answers, correct_answers)
-    # print("Flags:", flags)
 
-    # STEP 4: Highlight
     final_img = fn.highlight_per_question_by_answer(student_answer_color, flags)
-
 
     score, results = fn.score_answers_by_group(user_answers, correct_answers)
 
@@ -356,6 +349,16 @@ def process_exam(student_img_path, answer_img_path):
     print(f"student ID: {student_id}")
     print(f"score: {score}")
 
+    if subject_name == "Mathematics":
+        db.insert_data(name=student_name, student_code=student_id, subject=subject_name, math_score=score)
+    elif subject_name == "Physics":
+        db.insert_data(name=student_name, student_code=student_id, subject=subject_name, phy_score=score)
+    elif subject_name == "Chemistry":
+        db.insert_data(name=student_name, student_code=student_id, subject=subject_name, chem_score=score)
+    elif subject_name == "English": 
+        db.insert_data(name=student_name, student_code=student_id, subject=subject_name, eng_score=score)
+    else:
+        raise ValueError("Invalid subject.")
 
     cv2.imshow("Result", final_img)
     cv2.waitKey(0)

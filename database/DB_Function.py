@@ -1,12 +1,12 @@
 import sqlite3 as sql
 
-conn = sql.connect('Databases.db')
+conn = sql.connect('database/Databases.db')
 db = conn.cursor()
 
 #Insert data function
 
 def insert_data(name, student_code, subject, math_score=None, phy_score=None, chem_score=None, eng_score=None):
-    conn = sql.connect('Databases.db')
+    conn = sql.connect('database/Databases.db')
     db = conn.cursor()
 
     db.execute("INSERT OR IGNORE INTO basic_info (Name, Student_code) VALUES (?, ?)", (name, student_code))
@@ -27,7 +27,7 @@ def insert_answer(name, student_code, subject, answers):
     if len(answers) != 180:
         raise ValueError("answers must contain exactly 180 elements (36 questions × 5 choices)")
 
-    conn = sql.connect('Databases.db')
+    conn = sql.connect('database/Databases.db')
     db = conn.cursor()
 
     # Generate column names: "1A", "1B", ..., "36E"

@@ -35,9 +35,11 @@ def extract_user_answers(img_gray, threshold=150):
         for row_major in range(9):
             start_y = base_y + major_row_offsets[row_major]
 
+
             for row_minor in range(5):
                 max_fill = 0
                 answer_idx = 0  # ไม่ตอบ
+                filled_count = 0
 
                 for col_minor in range(13):
                     x = int(start_x + col_minor * (bubble_w + col_gap_minor))
@@ -47,10 +49,15 @@ def extract_user_answers(img_gray, threshold=150):
                     _, thresh = cv2.threshold(roi, threshold, 255, cv2.THRESH_BINARY_INV)
                     filled = cv2.countNonZero(thresh)
 
-                    if filled > max_fill and filled > bubble_w * bubble_h * 0.5:
-                        max_fill = filled
-                        answer_idx = col_minor + 1  # ตอบข้อที่ n
+                    if filled > bubble_w * bubble_h * 0.5:
+                        filled_count += 1
+                        if filled > max_fill:
+                            max_fill = filled
+                            answer_idx = col_minor + 1  # ตอบข้อที่ n
 
+                # ถ้าฝนมากกว่า 1 ช่องในแถวเดียวกัน ให้ถือว่าผิด (answer_idx = 0)
+                if filled_count > 1:
+                    answer_idx = 0
                 answers.append(answer_idx)
 
     return answers

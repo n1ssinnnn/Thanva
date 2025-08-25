@@ -15,11 +15,8 @@ def insert_account(fName, lName, student_code):
         upsert=True
     )
 
-def insert_data(fName, lName, student_code, subject, date, room, seat,math_score=None, phy_score=None, chem_score=None, eng_score=None):
+def insert_data(fName, lName, student_code, subject,math_score=None, phy_score=None, chem_score=None, eng_score=None):
     update_fields = {
-        "Date": date,
-        "Room": room,
-        "Seat": seat,
         "Math_Score": math_score,
         "Phy_Score": phy_score,
         "Chem_Score": chem_score,
@@ -38,8 +35,8 @@ def insert_data(fName, lName, student_code, subject, date, room, seat,math_score
         raise ValueError("Invalid subject.")
 
     basic_info_col.update_one(
-        {"fName": fName, "lName": lName, "ID": student_code, "Date": date, "Room": room, "Seat": seat},
-        {"$setOnInsert": {"fName": fName, "lName": lName, "ID": student_code, "Date": date, "Room": room, "Seat": seat},
+        {"fName": fName, "lName": lName, "ID": student_code},
+        {"$setOnInsert": {"fName": fName, "lName": lName, "ID": student_code},
          "$set": update_fields},
         upsert=True
     )

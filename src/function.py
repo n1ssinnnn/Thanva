@@ -1,7 +1,7 @@
 import cv2
 import pytesseract
 import numpy as np
-import database.DB_Function as db
+import database.mongoDB as db
 
 # For PP only
 # pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -357,13 +357,13 @@ def process_exam(student_img_path, answer_img_path):
     print(f"score: {score}")
 
     if subject_name == "Mathematics":
-        db.insert_data(name=student_name, student_code=student_id, subject=subject_name, math_score=score)
+        db.insert_data(fName=student_name, lName=student_name, student_code=student_id, subject=subject_name, math_score=score)
     elif subject_name == "Physics":
-        db.insert_data(name=student_name, student_code=student_id, subject=subject_name, phy_score=score)
+        db.insert_data(fName=student_name, lName=student_name, student_code=student_id, subject=subject_name, phy_score=score)
     elif subject_name == "Chemistry":
-        db.insert_data(name=student_name, student_code=student_id, subject=subject_name, chem_score=score)
-    elif subject_name == "English": 
-        db.insert_data(name=student_name, student_code=student_id, subject=subject_name, eng_score=score)
+        db.insert_data(fName=student_name, lName=student_name, student_code=student_id, subject=subject_name, chem_score=score)
+    elif subject_name == "English":
+        db.insert_data(fName=student_name, lName=student_name, student_code=student_id, subject=subject_name, eng_score=score)
     else:
         raise ValueError("Invalid subject.")
 
@@ -373,7 +373,7 @@ def process_exam(student_img_path, answer_img_path):
 
     save_highlighted_sheet(final_img, student_img_path)
 
-def save_highlighted_sheet(img, original_path):
+def save_highlighted_sheet(img, original_path): 
     """
     Save the highlighted sheet image to the 'highlighted_sheet' folder with a filename based on the original image.
     """

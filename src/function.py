@@ -2,12 +2,14 @@ import cv2
 import pytesseract
 import numpy as np
 import database.DB_Function as db
+import os
+import src.function as fn
 
 # For PP only
-# pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 #For MacOS (Nay, OHm)
-pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
+#pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
 
 # ขนาดและช่องว่าง
 bubble_w = 36
@@ -68,31 +70,31 @@ def grade_answers(user_answers, correct_answers):
     return [u == c for u, c in zip(user_answers, correct_answers)]
 
 
-def highlight_per_question_by_answer(img_color, correct_flags):
+def highlight_per_question_by_answer(img_color, user_answers, correct_answers):
     img_overlay = img_color.copy()
     idx = 0
 
     for col_major in range(4):
         start_x, base_y = major_column_positions[col_major]
-
         for row_major in range(9):
             start_y = base_y + major_row_offsets[row_major]
-
             for row_minor in range(5):
-                if idx >= len(correct_flags):
+                if idx >= len(user_answers):
                     break
-
-                # Highlight เฉพาะช่วงคำตอบ 13 bubble ต่อ minor row
-                x1 = int(start_x)
-                y1 = int(start_y + row_minor * (bubble_h + row_gap_minor))
-                x2 = x1 + 13 * (bubble_w + col_gap_minor) - col_gap_minor
-                y2 = y1 + bubble_h
-
-                color = (0, 255, 0) if correct_flags[idx] else (0, 0, 255)
-                cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
+                user_ans = user_answers[idx]
+                correct_ans = correct_answers[idx]
+                if user_ans != 0:
+                    x1 = int(start_x)
+                    y1 = int(start_y + row_minor * (bubble_h + row_gap_minor))
+                    x2 = x1 + 13 * (bubble_w + col_gap_minor) - col_gap_minor
+                    y2 = y1 + bubble_h
+                    if user_ans == correct_ans:
+                        color = (0, 255, 0) # green
+                        cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
+                    elif user_ans != correct_ans:
+                        color = (0, 0, 255) # red
+                        cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
                 idx += 1
-
-    # โปร่งใส: เห็นตัวอักษรข้างหลัง
     cv2.addWeighted(img_overlay, 0.4, img_color, 0.6, 0, img_color)
     return img_color
 
@@ -318,10 +320,15 @@ def load_extract_anwers(student_path, answer_path):
 
     return user_answers, correct_answers
 
-
-import os
-import cv2
-import src.function as fn
+# ฟังก์ชันแยกชื่อและนามสกุล โดยใช้ space แรกเป็นตัวแบ่ง
+def split_name(fullname):
+    parts = fullname.strip().split(' ', 1)
+    if len(parts) == 2:
+        return parts[0], parts[1]
+    elif len(parts) == 1:
+        return parts[0], ''
+    else:
+        return '', ''
 
 def process_exam(student_img_path, answer_img_path):
 
@@ -331,12 +338,15 @@ def process_exam(student_img_path, answer_img_path):
 
     flags = fn.grade_answers(user_answers, correct_answers)
 
-    final_img = fn.highlight_per_question_by_answer(student_answer_color, flags)
+    final_img = fn.highlight_per_question_by_answer(student_answer_color, user_answers, correct_answers)
 
     score, results = fn.score_answers_by_group(user_answers, correct_answers)
 
     student_info = fn.extract_student_info(student_answer_color)
+
+
     student_name = fn.clean_exam_info(student_info.get("student_name", ""))
+    first_name, last_name = split_name(student_name)
     subject_name = fn.clean_exam_info(student_info.get("subject_name", ""))
     date = fn.clean_exam_info(student_info.get("date", ""))
     room = fn.clean_exam_info(student_info.get("room", ""))
@@ -347,7 +357,8 @@ def process_exam(student_img_path, answer_img_path):
     student_id = fn.clean_exam_info(final_numbers["student_id"])
     seat = student_id[-2:] if len(student_id) >= 2 else student_id
 
-    print(f"student name: {student_name}")
+    print(f"first name: {first_name}")
+    print(f"last name: {last_name}")
     print(f"subject: {subject_name}")
     print(f"date: {date}")
     print(f"room: {room}")
@@ -366,10 +377,6 @@ def process_exam(student_img_path, answer_img_path):
         db.insert_data(name=student_name, student_code=student_id, subject=subject_name, eng_score=score)
     else:
         raise ValueError("Invalid subject.")
-
-    cv2.imshow("Result", final_img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
     save_highlighted_sheet(final_img, student_img_path)
 

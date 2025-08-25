@@ -73,7 +73,7 @@ def grade_answers(user_answers, correct_answers):
 def highlight_per_question_by_answer(img_color, user_answers, correct_answers):
     img_overlay = img_color.copy()
     idx = 0
-
+    idx = 0
     for col_major in range(4):
         start_x, base_y = major_column_positions[col_major]
         for row_major in range(9):
@@ -83,18 +83,64 @@ def highlight_per_question_by_answer(img_color, user_answers, correct_answers):
                     break
                 user_ans = user_answers[idx]
                 correct_ans = correct_answers[idx]
-                if user_ans != 0:
+                # ข้อที่ได้คะแนน: highlight เขียวทั้ง row ของ bubble นั้น
+                if user_ans == correct_ans and user_ans != 0:
                     x1 = int(start_x)
                     y1 = int(start_y + row_minor * (bubble_h + row_gap_minor))
                     x2 = x1 + 13 * (bubble_w + col_gap_minor) - col_gap_minor
                     y2 = y1 + bubble_h
-                    if user_ans == correct_ans:
-                        color = (0, 255, 0) # green
-                        cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
-                    elif user_ans != correct_ans:
-                        color = (0, 0, 255) # red
-                        cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
+                    color = (0, 255, 0)
+                    cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
+                # ข้อที่ไม่ได้คะแนน: highlight แดงทั้ง row ของ bubble นั้น
+                elif user_ans != correct_ans:
+                    x1 = int(start_x)
+                    y1 = int(start_y + row_minor * (bubble_h + row_gap_minor))
+                    x2 = x1 + 13 * (bubble_w + col_gap_minor) - col_gap_minor
+                    y2 = y1 + bubble_h
+                    color = (0, 0, 255)
+                    cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
                 idx += 1
+    cv2.addWeighted(img_overlay, 0.4, img_color, 0.6, 0, img_color)
+    return img_color
+
+def get_per_question_results(user_answers, correct_answers):
+    results = []
+    for u, c in zip(user_answers, correct_answers):
+        if u == 0 and c == 0:
+            results.append(None)
+        elif u == c and u != 0:
+            results.append(True)
+        else:
+            results.append(False)
+    return results
+
+# ฟังก์ชัน highlight เฉพาะข้อผิด: highlight แดงเฉพาะ bubble ที่ควรฝนแต่ไม่ฝน หรือฝนผิด
+def highlight_wrong_bubbles(img_color, user_answers, correct_answers):
+    img_overlay = img_color.copy()
+    idx = 0
+    for col_major in range(4):
+        start_x, base_y = major_column_positions[col_major]
+        for row_major in range(9):
+            start_y = base_y + major_row_offsets[row_major]
+            for row_minor in range(5):
+                if idx >= len(user_answers):
+                    break
+                user_ans = user_answers[idx]
+                correct_ans = correct_answers[idx]
+                # เฉพาะข้อผิดเท่านั้น
+                if user_ans != correct_ans:
+                    for col_minor in range(13):
+                        # กรณีควรฝนแต่ไม่ฝน หรือฝนผิดช่อง
+                        if (col_minor+1 == correct_ans and user_ans != correct_ans) or (col_minor+1 == user_ans and user_ans != correct_ans):
+                            x1 = int(start_x + col_minor * (bubble_w + col_gap_minor))
+                            y1 = int(start_y + row_minor * (bubble_h + row_gap_minor))
+                            x2 = x1 + bubble_w
+                            y2 = y1 + bubble_h
+                            color = (0, 0, 255)
+                            cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
+                idx += 1
+    cv2.addWeighted(img_overlay, 0.4, img_color, 0.6, 0, img_color)
+    return img_color
     cv2.addWeighted(img_overlay, 0.4, img_color, 0.6, 0, img_color)
     return img_color
 
@@ -336,8 +382,10 @@ def process_exam(student_img_path, answer_img_path):
 
     user_answers, correct_answers = fn.load_extract_anwers(student_img_path, answer_img_path)
 
-    flags = fn.grade_answers(user_answers, correct_answers)
+    # เก็บผลลัพธ์ว่าข้อไหนได้คะแนน (True/False/None)
+    per_question_results = get_per_question_results(user_answers, correct_answers)
 
+    # สามารถนำ per_question_results ไปใช้ต่อ เช่น highlight เฉพาะข้อที่ถูก/ผิด
     final_img = fn.highlight_per_question_by_answer(student_answer_color, user_answers, correct_answers)
 
     score, results = fn.score_answers_by_group(user_answers, correct_answers)

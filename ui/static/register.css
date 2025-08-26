@@ -1,0 +1,60 @@
+/* setting */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.hidden {
+    display: none;
+}
+
+@font-face {
+    font-family: 'Font';
+    src: url('/static/fonts/Font.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* background */
+.bg {
+    position: fixed;
+    top : 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;  
+    background-image: url('/static/register.png');
+    background-size: cover;
+    z-index: -1;
+}
+
+body {
+    cursor: url('/static/normal_transparent.png'), auto;
+    overflow: hidden;
+    margin: 0;
+}
+
+/* register */
+
+.register {
+    left: 2vw;
+    z-index: 1;
+}
+
+.register_content {
+    position: relative;
+}
+
+.register_content {
+    position: relative;
+    top: 7vw;
+    left: 12vh;
+    width: 25vw; /* กว้างเท่ากับรูป */
+    height: auto;
+}
+
+#register_frame {
+    width: 100%;
+    display: block;
+}
+

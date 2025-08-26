@@ -1,8 +1,13 @@
 import cv2
 import pytesseract
 import numpy as np
+import database.mongoDB as db
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# For PP only
+# pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+#For MacOS (Nay, OHm)
+pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
 
 # ขนาดและช่องว่าง
 bubble_w = 36
@@ -30,9 +35,11 @@ def extract_user_answers(img_gray, threshold=150):
         for row_major in range(9):
             start_y = base_y + major_row_offsets[row_major]
 
+
             for row_minor in range(5):
                 max_fill = 0
                 answer_idx = 0  # ไม่ตอบ
+                filled_count = 0
 
                 for col_minor in range(13):
                     x = int(start_x + col_minor * (bubble_w + col_gap_minor))
@@ -42,10 +49,15 @@ def extract_user_answers(img_gray, threshold=150):
                     _, thresh = cv2.threshold(roi, threshold, 255, cv2.THRESH_BINARY_INV)
                     filled = cv2.countNonZero(thresh)
 
-                    if filled > max_fill and filled > bubble_w * bubble_h * 0.5:
-                        max_fill = filled
-                        answer_idx = col_minor + 1  # ตอบข้อที่ n
+                    if filled > bubble_w * bubble_h * 0.5:
+                        filled_count += 1
+                        if filled > max_fill:
+                            max_fill = filled
+                            answer_idx = col_minor + 1  # ตอบข้อที่ n
 
+                # ถ้าฝนมากกว่า 1 ช่องในแถวเดียวกัน ให้ถือว่าผิด (answer_idx = 0)
+                if filled_count > 1:
+                    answer_idx = 0
                 answers.append(answer_idx)
 
     return answers
@@ -312,22 +324,14 @@ import cv2
 import src.function as fn
 
 def process_exam(student_img_path, answer_img_path):
-    # โหลดภาพสี (ไว้ไฮไลท์)
+
     student_answer_color = cv2.imread(student_img_path)
 
-    # อ่านคำตอบจาก user,correct
     user_answers, correct_answers = fn.load_extract_anwers(student_img_path, answer_img_path)
 
-    #print(user_answers)
-    #print(correct_answers)
-
-    # STEP 3: ตรวจคำตอบ
     flags = fn.grade_answers(user_answers, correct_answers)
-    # print("Flags:", flags)
 
-    # STEP 4: Highlight
     final_img = fn.highlight_per_question_by_answer(student_answer_color, flags)
-
 
     score, results = fn.score_answers_by_group(user_answers, correct_answers)
 
@@ -352,6 +356,16 @@ def process_exam(student_img_path, answer_img_path):
     print(f"student ID: {student_id}")
     print(f"score: {score}")
 
+    if subject_name == "Mathematics":
+        db.insert_data(fName=student_name, lName=student_name, student_code=student_id, subject=subject_name, math_score=score)
+    elif subject_name == "Physics":
+        db.insert_data(fName=student_name, lName=student_name, student_code=student_id, subject=subject_name, phy_score=score)
+    elif subject_name == "Chemistry":
+        db.insert_data(fName=student_name, lName=student_name, student_code=student_id, subject=subject_name, chem_score=score)
+    elif subject_name == "English":
+        db.insert_data(fName=student_name, lName=student_name, student_code=student_id, subject=subject_name, eng_score=score)
+    else:
+        raise ValueError("Invalid subject.")
 
     cv2.imshow("Result", final_img)
     cv2.waitKey(0)
@@ -359,7 +373,7 @@ def process_exam(student_img_path, answer_img_path):
 
     save_highlighted_sheet(final_img, student_img_path)
 
-def save_highlighted_sheet(img, original_path):
+def save_highlighted_sheet(img, original_path): 
     """
     Save the highlighted sheet image to the 'highlighted_sheet' folder with a filename based on the original image.
     """
@@ -371,5 +385,5 @@ def save_highlighted_sheet(img, original_path):
     cv2.imwrite(save_path, img)
     print(f"Highlighted sheet saved to: {save_path}")
 
-if __name__ == "__main__":
-    process_exam(student_img_path, answer_img_path)
+# if __name__ == "__main__":
+#     process_exam(student_img_path, answer_img_path)

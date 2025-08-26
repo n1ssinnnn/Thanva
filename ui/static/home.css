@@ -16,19 +16,10 @@
     font-style: normal;
 }
 
-/* background */
-#bg-video {
-    position: fixed;
-    top : 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;  
-    object-fit: cover;
-    z-index: -1;
-}
-
 /* body */
 body {
+    background-image: url(bg.png);
+    background-size: cover;
     cursor: url('/static/normal_transparent.png'), auto;
     overflow: hidden;
     margin: 0;
@@ -40,7 +31,6 @@ body {
     padding: 10vh 6vw; 
     gap: 5vh;
     z-index: 1;
-    width: 25vw;
 }
 
 .menu img {

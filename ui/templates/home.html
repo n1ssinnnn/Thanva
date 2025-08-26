@@ -4,16 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checking Answer</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='ui.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
     <script src="/static/script.js" defer></script>
 </head>
 
 <body>
-    <!-- Background -->
-    <video autoplay muted loop id="bg-video">
-        <source src="/static/bg.mp4" type="video/mp4">
-    </video>
-
+    <!-- Audio -->
     <audio loop hidden id="bgm">
         <source src="{{ url_for('static', filename='bgm.mp3') }}" type="audio/mpeg">
     </audio>
@@ -23,10 +19,10 @@
     
     <!-- Menu -->
     <div class="menu">
-        <img class="menu-button" id="check-button" src="/static/check_button.png" alt="check_button">
-        <img class="menu-button" id="myscore-button" src="/static/myscore_button.png" alt="myscore_button">
-        <img class="menu-button" id="setting-button" src="/static/setting_button.png" alt="setting_button">
-        <img class="menu-button" id="credit-button" src="/static/credit_button.png" alt="credit_button">
+        <img class="menu-button" id="check-button" src="/static/check_button.png" alt="check button">
+        <img class="menu-button" id="myscore-button" src="/static/myscore_button.png" alt="myscore button">
+        <img class="menu-button" id="setting-button" src="/static/setting_button.png" alt="setting button">
+        <img class="menu-button" id="credit-button" src="/static/credit_button.png" alt="credit button">
     </div>
 
     <!-- Check Menu -->

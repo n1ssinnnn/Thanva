@@ -1,0 +1,25 @@
+/* setting */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.hidden {
+    display: none;
+}
+
+@font-face {
+    font-family: 'Font';
+    src: url('/static/fonts/Font.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    background-image: url(register.png);
+    background-size: cover;
+    cursor: url('/static/normal_transparent.png'), auto;
+    overflow: hidden;
+    margin: 0;
+}

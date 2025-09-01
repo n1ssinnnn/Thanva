@@ -4,10 +4,10 @@ import numpy as np
 import database.mongoDB as db
 
 # For PP only
-# pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 #For MacOS (Nay, OHm)
-pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
+#pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
 
 # ขนาดและช่องว่าง
 bubble_w = 36

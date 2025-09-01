@@ -1,3 +1,12 @@
+# ฟังก์ชันแยกชื่อและนามสกุล โดยใช้ space แรกเป็นตัวแบ่ง
+def split_name(fullname):
+    parts = fullname.strip().split(' ', 1)
+    if len(parts) == 2:
+        return parts[0], parts[1]
+    elif len(parts) == 1:
+        return parts[0], ''
+    else:
+        return '', ''
 import cv2
 import pytesseract
 import numpy as np
@@ -100,6 +109,8 @@ def highlight_per_question_by_answer(img_color, user_answers, correct_answers):
                     color = (0, 0, 255)
                     cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
                 idx += 1
+
+    # โปร่งใส: เห็นตัวอักษรข้างหลัง
     cv2.addWeighted(img_overlay, 0.4, img_color, 0.6, 0, img_color)
     return img_color
 
@@ -139,8 +150,6 @@ def highlight_wrong_bubbles(img_color, user_answers, correct_answers):
                             color = (0, 0, 255)
                             cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
                 idx += 1
-    cv2.addWeighted(img_overlay, 0.4, img_color, 0.6, 0, img_color)
-    return img_color
     cv2.addWeighted(img_overlay, 0.4, img_color, 0.6, 0, img_color)
     return img_color
 
@@ -399,14 +408,16 @@ def process_exam(student_img_path, answer_img_path):
     date = fn.clean_exam_info(student_info.get("date", ""))
     room = fn.clean_exam_info(student_info.get("room", ""))
 
+
     written_numbers = fn.extract_written_numbers_fields(student_answer_color)
     final_numbers = fn.get_final_written_numbers(student_answer_color)
     subject_id = fn.clean_exam_info(final_numbers["subject_id"])
     student_id = fn.clean_exam_info(final_numbers["student_id"])
     seat = student_id[-2:] if len(student_id) >= 2 else student_id
 
-    print(f"first name: {first_name}")
-    print(f"last name: {last_name}")
+    fName, lName = split_name(student_name)
+    print(f"First Name: {fName}")
+    print(f"Last Name: {lName}")
     print(f"subject: {subject_name}")
     print(f"date: {date}")
     print(f"room: {room}")
@@ -416,19 +427,23 @@ def process_exam(student_img_path, answer_img_path):
     print(f"score: {score}")
 
     if subject_name == "Mathematics":
-        db.insert_data(name=student_name, student_code=student_id, subject=subject_name, math_score=score)
+        db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, math_score=score)
     elif subject_name == "Physics":
-        db.insert_data(name=student_name, student_code=student_id, subject=subject_name, phy_score=score)
+        db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, phy_score=score)
     elif subject_name == "Chemistry":
-        db.insert_data(name=student_name, student_code=student_id, subject=subject_name, chem_score=score)
-    elif subject_name == "English": 
-        db.insert_data(name=student_name, student_code=student_id, subject=subject_name, eng_score=score)
+        db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, chem_score=score)
+    elif subject_name == "English":
+        db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, eng_score=score)
     else:
         raise ValueError("Invalid subject.")
 
+    cv2.imshow("Result", final_img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
     save_highlighted_sheet(final_img, student_img_path)
 
-def save_highlighted_sheet(img, original_path):
+def save_highlighted_sheet(img, original_path): 
     """
     Save the highlighted sheet image to the 'highlighted_sheet' folder with a filename based on the original image.
     """

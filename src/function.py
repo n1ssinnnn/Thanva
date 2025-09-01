@@ -2,6 +2,8 @@ import cv2
 import pytesseract
 import numpy as np
 import database.mongoDB as db
+import os
+import src.function as fn
 
 # For PP only
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -68,31 +70,77 @@ def grade_answers(user_answers, correct_answers):
     return [u == c for u, c in zip(user_answers, correct_answers)]
 
 
-def highlight_per_question_by_answer(img_color, correct_flags):
+def highlight_per_question_by_answer(img_color, user_answers, correct_answers):
     img_overlay = img_color.copy()
     idx = 0
-
+    idx = 0
     for col_major in range(4):
         start_x, base_y = major_column_positions[col_major]
-
         for row_major in range(9):
             start_y = base_y + major_row_offsets[row_major]
-
             for row_minor in range(5):
-                if idx >= len(correct_flags):
+                if idx >= len(user_answers):
                     break
-
-                # Highlight เฉพาะช่วงคำตอบ 13 bubble ต่อ minor row
-                x1 = int(start_x)
-                y1 = int(start_y + row_minor * (bubble_h + row_gap_minor))
-                x2 = x1 + 13 * (bubble_w + col_gap_minor) - col_gap_minor
-                y2 = y1 + bubble_h
-
-                color = (0, 255, 0) if correct_flags[idx] else (0, 0, 255)
-                cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
+                user_ans = user_answers[idx]
+                correct_ans = correct_answers[idx]
+                # ข้อที่ได้คะแนน: highlight เขียวทั้ง row ของ bubble นั้น
+                if user_ans == correct_ans and user_ans != 0:
+                    x1 = int(start_x)
+                    y1 = int(start_y + row_minor * (bubble_h + row_gap_minor))
+                    x2 = x1 + 13 * (bubble_w + col_gap_minor) - col_gap_minor
+                    y2 = y1 + bubble_h
+                    color = (0, 255, 0)
+                    cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
+                # ข้อที่ไม่ได้คะแนน: highlight แดงทั้ง row ของ bubble นั้น
+                elif user_ans != correct_ans:
+                    x1 = int(start_x)
+                    y1 = int(start_y + row_minor * (bubble_h + row_gap_minor))
+                    x2 = x1 + 13 * (bubble_w + col_gap_minor) - col_gap_minor
+                    y2 = y1 + bubble_h
+                    color = (0, 0, 255)
+                    cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
                 idx += 1
 
     # โปร่งใส: เห็นตัวอักษรข้างหลัง
+    cv2.addWeighted(img_overlay, 0.4, img_color, 0.6, 0, img_color)
+    return img_color
+
+def get_per_question_results(user_answers, correct_answers):
+    results = []
+    for u, c in zip(user_answers, correct_answers):
+        if u == 0 and c == 0:
+            results.append(None)
+        elif u == c and u != 0:
+            results.append(True)
+        else:
+            results.append(False)
+    return results
+
+# ฟังก์ชัน highlight เฉพาะข้อผิด: highlight แดงเฉพาะ bubble ที่ควรฝนแต่ไม่ฝน หรือฝนผิด
+def highlight_wrong_bubbles(img_color, user_answers, correct_answers):
+    img_overlay = img_color.copy()
+    idx = 0
+    for col_major in range(4):
+        start_x, base_y = major_column_positions[col_major]
+        for row_major in range(9):
+            start_y = base_y + major_row_offsets[row_major]
+            for row_minor in range(5):
+                if idx >= len(user_answers):
+                    break
+                user_ans = user_answers[idx]
+                correct_ans = correct_answers[idx]
+                # เฉพาะข้อผิดเท่านั้น
+                if user_ans != correct_ans:
+                    for col_minor in range(13):
+                        # กรณีควรฝนแต่ไม่ฝน หรือฝนผิดช่อง
+                        if (col_minor+1 == correct_ans and user_ans != correct_ans) or (col_minor+1 == user_ans and user_ans != correct_ans):
+                            x1 = int(start_x + col_minor * (bubble_w + col_gap_minor))
+                            y1 = int(start_y + row_minor * (bubble_h + row_gap_minor))
+                            x2 = x1 + bubble_w
+                            y2 = y1 + bubble_h
+                            color = (0, 0, 255)
+                            cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
+                idx += 1
     cv2.addWeighted(img_overlay, 0.4, img_color, 0.6, 0, img_color)
     return img_color
 
@@ -192,21 +240,14 @@ def extract_written_numbers_fields(img_input):
     digits = {}
     for key, (x, y, w, h) in number_fields.items():
         roi = img_gray[y:y+h, x:x+w]
-        #if roi.size == 0:
-        #   print(f"Warning: ROI for '{key}' is empty or out of bounds.")
-        #    digits[key] = "?"
-        #    continue                                                          *****
         roi = cv2.resize(roi, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
         roi = cv2.GaussianBlur(roi, (3, 3), 0)
         _, roi = cv2.threshold(roi, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        # cv2.imwrite(f"debug_{key}.png", roi)  # สำหรับ debug
         text = pytesseract.image_to_string(
             roi,
             config='--psm 10 -l eng --oem 3 -c tessedit_char_whitelist=0123456789'
         )
         value = text.strip()
-        #if not value:
-        #   print(f"Warning: No digit detected for '{key}'.")           *****
         digits[key] = value if value else "?"
 
     exam_number = ''.join([digits.get(f'exam_digit_{i}', '?') for i in range(1, 4)])
@@ -237,7 +278,6 @@ def extract_omr_digits(img_gray, digit_boxes, threshold=150, min_fill_ratio=0.2)
             if fill > max_fill:
                 max_fill = fill
                 selected_digit = i
-        # ถ้า max_fill น้อยกว่าค่าที่กำหนด (เช่น ไม่มีฝนจริง)
         if max_fill < (w * cell_height * min_fill_ratio):
             digits[key] = ""
         else:
@@ -246,14 +286,12 @@ def extract_omr_digits(img_gray, digit_boxes, threshold=150, min_fill_ratio=0.2)
 
 
 def merge_omr_ocr_field(omr: str, ocr: str) -> str:
-    # ถ้า ocr เป็น ? ให้เว้นว่าง ไม่เติมเลข omr                     <ตอนนี้ยังไม่ได้ใช้ function นี้>
     result = ""
     for o, c in zip(omr, ocr):
         if c == "?":
-            continue  # ข้ามหลักที่เป็น ?
+            continue  
         else:
             result += c
-    # ถ้า ocr สั้นกว่า omr
     if len(omr) > len(ocr):
         result += omr[len(ocr):]
     return result
@@ -261,9 +299,7 @@ def merge_omr_ocr_field(omr: str, ocr: str) -> str:
 def get_final_written_numbers(img_input):
     written_numbers = extract_written_numbers_fields(img_input)
     final = {}
-    # รหัสวิชา: ใช้ OMR ทั้งหมด
     final["subject_id"] = written_numbers.get("subject_id", "")
-    # student_id: remove first digit
     omr_student = written_numbers.get("student_id", "")
     final["student_id"] = omr_student[1:] if len(omr_student) > 1 else ""
     return final
@@ -290,7 +326,6 @@ def scan_digits_from_boxes(img_gray, boxes_dict, num_choices=10, threshold=150):
     return ''.join(digits)
 
 def clean_exam_info(text: str) -> str:
-    # ลบ { } ; |
     return text.replace('{', '').replace('}', '').replace(';', '').replace('|', '').strip()
 
 def extract_student_info(img_gray):
@@ -302,7 +337,6 @@ def extract_student_info(img_gray):
         "room": info.get("room", ""),
     }
 
-# โหลดภาพ
 def load_extract_anwers(student_path, answer_path):
 
     student_answer = cv2.imread(student_path, cv2.IMREAD_GRAYSCALE)
@@ -318,10 +352,14 @@ def load_extract_anwers(student_path, answer_path):
 
     return user_answers, correct_answers
 
-
-import os
-import cv2
-import src.function as fn
+def split_name(fullname):
+    parts = fullname.strip().split(' ', 1)
+    if len(parts) == 2:
+        return parts[0], parts[1]
+    elif len(parts) == 1:
+        return parts[0], ''
+    else:
+        return '', ''
 
 def process_exam(student_img_path, answer_img_path):
 
@@ -329,17 +367,21 @@ def process_exam(student_img_path, answer_img_path):
 
     user_answers, correct_answers = fn.load_extract_anwers(student_img_path, answer_img_path)
 
-    flags = fn.grade_answers(user_answers, correct_answers)
+    per_question_results = get_per_question_results(user_answers, correct_answers)
 
-    final_img = fn.highlight_per_question_by_answer(student_answer_color, flags)
+    final_img = fn.highlight_per_question_by_answer(student_answer_color, user_answers, correct_answers)
 
     score, results = fn.score_answers_by_group(user_answers, correct_answers)
 
     student_info = fn.extract_student_info(student_answer_color)
+
+
     student_name = fn.clean_exam_info(student_info.get("student_name", ""))
+    first_name, last_name = split_name(student_name)
     subject_name = fn.clean_exam_info(student_info.get("subject_name", ""))
     date = fn.clean_exam_info(student_info.get("date", ""))
     room = fn.clean_exam_info(student_info.get("room", ""))
+
 
     written_numbers = fn.extract_written_numbers_fields(student_answer_color)
     final_numbers = fn.get_final_written_numbers(student_answer_color)
@@ -347,7 +389,9 @@ def process_exam(student_img_path, answer_img_path):
     student_id = fn.clean_exam_info(final_numbers["student_id"])
     seat = student_id[-2:] if len(student_id) >= 2 else student_id
 
-    print(f"student name: {student_name}")
+    fName, lName = split_name(student_name)
+    print(f"First Name: {fName}")
+    print(f"Last Name: {lName}")
     print(f"subject: {subject_name}")
     print(f"date: {date}")
     print(f"room: {room}")
@@ -356,16 +400,16 @@ def process_exam(student_img_path, answer_img_path):
     print(f"student ID: {student_id}")
     print(f"score: {score}")
 
-    if subject_name == "Mathematics":
-        db.insert_data(fName=student_name, lName=student_name, student_code=student_id, subject=subject_name, math_score=score)
-    elif subject_name == "Physics":
-        db.insert_data(fName=student_name, lName=student_name, student_code=student_id, subject=subject_name, phy_score=score)
-    elif subject_name == "Chemistry":
-        db.insert_data(fName=student_name, lName=student_name, student_code=student_id, subject=subject_name, chem_score=score)
-    elif subject_name == "English":
-        db.insert_data(fName=student_name, lName=student_name, student_code=student_id, subject=subject_name, eng_score=score)
-    else:
-        raise ValueError("Invalid subject.")
+    # if subject_name == "Mathematics":
+    #     db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, math_score=score)
+    # elif subject_name == "Physics":
+    #     db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, phy_score=score)
+    # elif subject_name == "Chemistry":
+    #     db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, chem_score=score)
+    # elif subject_name == "English":
+    #     db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, eng_score=score)
+    # else:
+    #     raise ValueError("Invalid subject.")
 
     cv2.imshow("Result", final_img)
     cv2.waitKey(0)
@@ -385,5 +429,3 @@ def save_highlighted_sheet(img, original_path):
     cv2.imwrite(save_path, img)
     print(f"Highlighted sheet saved to: {save_path}")
 
-# if __name__ == "__main__":
-#     process_exam(student_img_path, answer_img_path)

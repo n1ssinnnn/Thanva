@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checking Answer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+    <script src="/static/script.js" defer></script>
+</head>
+
+<body>
+    <!-- Audio -->
+    <audio loop hidden id="bgm">
+        <source src="{{ url_for('static', filename='bgm.mp3') }}" type="audio/mpeg">
+    </audio>
+
+    <audio id="sfx-select" src="{{ url_for('static', filename='sfx_select.mp3') }}"></audio>
+    <audio id="sfx-click" src="{{ url_for('static', filename='sfx_click.mp3') }}"></audio>
+    
+    <!-- Menu -->
+    <div class="menu">
+        <img class="menu-button" id="check-button" src="/static/check_button.png" alt="check button">
+        <img class="menu-button" id="myscore-button" src="/static/myscore_button.png" alt="myscore button">
+        <img class="menu-button" id="setting-button" src="/static/setting_button.png" alt="setting button">
+        <img class="menu-button" id="credit-button" src="/static/credit_button.png" alt="credit button">
+    </div>
+
+    <!-- Check Menu -->
+    <div id="check" class="check hidden">
+        <div class="check_content">
+            <img src="/static/check_menu.png" alt="check_menu" class="check_menu">
+
+            <!-- Insert -->
+            <label for="file-input">
+                <img src="/static/insert.png" alt="insert_button" class="insert_button">
+            </label>
+            <input type="file" id="file-input" class="file_input" accept="image/*" hidden>
+
+            <!-- preview -->
+            <img id="uploaded-image" class="uploaded_image hidden" alt="Uploaded preview">
+
+            <!-- Confirm -->
+            <label for="add-data">
+                <img src="/static/confirm.png" alt="confirm_button" class="confirm_button hidden">
+            </label>
+        </div>
+    </div>
+
+    <!-- Score Menu -->
+    <div id="score" class="score hidden">
+        <div class="score_content">
+            <img src="/static/score_menu.png" alt="score_menu" class="score_menu">
+        </div>
+
+        <div class="studentid-box">
+            <input type="text" id="studentid">
+        </div>
+
+        <label for="submit-score">
+            <img src="/static/confirm.png" alt="confirm_button" id="score-confirm" class="confirm_button hidden">
+        </label>
+    </div>
+
+    <!-- Setting Menu -->
+    <div id="setting" class="setting hidden">
+    </div>
+
+    <!-- Credit Menu -->
+    <div id="credit" class="credit hidden">
+    </div>
+
+</body>
+</html>

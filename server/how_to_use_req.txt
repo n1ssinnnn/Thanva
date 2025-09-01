@@ -1,0 +1,6 @@
+cd server
+python -m venv venv
+source venv/bin/activate   # ถ้า macOS / Linux
+venv\Scripts\activate      # ถ้า Windows
+
+pip install -r requirements.txt

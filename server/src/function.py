@@ -3,7 +3,7 @@ import pytesseract
 import numpy as np
 import database.mongoDB as db
 import os
-import src.function as fn
+import server.src.function as fn
 
 # For PP only
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -400,16 +400,18 @@ def process_exam(student_img_path, answer_img_path):
     print(f"student ID: {student_id}")
     print(f"score: {score}")
 
-    # if subject_name == "Mathematics":
-    #     db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, math_score=score)
-    # elif subject_name == "Physics":
-    #     db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, phy_score=score)
-    # elif subject_name == "Chemistry":
-    #     db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, chem_score=score)
-    # elif subject_name == "English":
-    #     db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, eng_score=score)
-    # else:
-    #     raise ValueError("Invalid subject.")
+    if subject_name == "Mathematics":
+        db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, room=room, math_score=score)
+    elif subject_name == "Physics":
+        db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, room=room, phy_score=score)
+    elif subject_name == "Chemistry":
+        db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, room=room, chem_score=score)
+    elif subject_name == "English":
+        db.insert_data(fName=fName, lName=lName, student_code=student_id, subject=subject_name, room=room, eng_score=score)
+    else:
+        raise ValueError("Invalid subject.")
+
+    db.insert_answer(student_code=student_id, subject=subject_name, answers=user_answers)
 
     cv2.imshow("Result", final_img)
     cv2.waitKey(0)

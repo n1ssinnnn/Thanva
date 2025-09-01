@@ -1,6 +1,6 @@
 from pymongo import MongoClient
-
-client = MongoClient("mongodb+srv://Cluster40353:pbl1com31@cluster40353.jwnefyf.mongodb.net/")
+import certifi
+client = MongoClient("mongodb+srv://Cluster40353:pbl1com31@cluster40353.jwnefyf.mongodb.net/", tlsCAFile=certifi.where())
 
 db = client["Databases"]
 
@@ -15,12 +15,12 @@ def insert_account(fName, lName, student_code):
         upsert=True
     )
 
-def insert_data(fName, lName, student_code, subject,math_score=None, phy_score=None, chem_score=None, eng_score=None):
+def insert_data(fName, lName, student_code, subject, room, math_score=None, phy_score=None, chem_score=None, eng_score=None):
     update_fields = {
         "Math_Score": math_score,
         "Phy_Score": phy_score,
         "Chem_Score": chem_score,
-        "Eng_Score": eng_score
+        "Eng_Score": eng_score,
     }
 
     if subject == "Mathematics":
@@ -35,21 +35,19 @@ def insert_data(fName, lName, student_code, subject,math_score=None, phy_score=N
         raise ValueError("Invalid subject.")
 
     basic_info_col.update_one(
-        {"fName": fName, "lName": lName, "ID": student_code},
-        {"$setOnInsert": {"fName": fName, "lName": lName, "ID": student_code},
+        {"fName": fName, "lName": lName, "ID": student_code, "Room": room},
+        {"$setOnInsert": {"fName": fName, "lName": lName, "ID": student_code, "Room": room},
          "$set": update_fields},
         upsert=True
     )
 
-def insert_answer(fName, lName, student_code, subject, answers):
+def insert_answer(student_code, subject, answers):
     if len(answers) != 180:
         raise ValueError("answers must contain exactly 180 elements (36 questions × 5 choices)")
 
     columns = [f"{i}{letter}" for i in range(1, 37) for letter in ['A', 'B', 'C', 'D', 'E']]
 
     answer_doc = {
-        "fName": fName,
-        "lName": lName,
         "ID": student_code,
         "Subject": subject
     }
@@ -57,7 +55,7 @@ def insert_answer(fName, lName, student_code, subject, answers):
         answer_doc[col] = ans
 
     answer_col.update_one(
-        {"fName": fName, "lName": lName, "ID": student_code, "Subject": subject},
+        {"ID": student_code, "Subject": subject},
         {"$set": answer_doc},
         upsert=True
     )

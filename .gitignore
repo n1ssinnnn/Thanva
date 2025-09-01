@@ -1,10 +1,28 @@
-# macOS
-.DS_Store
-
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+instance/
+.env
 
-__pycache__
-
+# Virtual environment
 venv/
+ENV/
+env/
+
+# Flask specific
+*.log
+
+# Node.js / React
+client/node_modules/
+client/build/
+client/.env
+
+# VSCode settings
+.vscode/
+
+# macOS system files
+.DS_Store

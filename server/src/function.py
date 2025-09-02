@@ -1,15 +1,15 @@
 import cv2
 import pytesseract
 import numpy as np
-import database.mongoDB as db
+import src.db_function as db
 import os
-import server.src.function as fn
+import src.function as fn
 
 # For PP only
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 #For MacOS (Nay, OHm)
-#pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
+pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
 
 # ขนาดและช่องว่าง
 bubble_w = 36
@@ -361,6 +361,18 @@ def split_name(fullname):
     else:
         return '', ''
 
+def save_highlighted_sheet(img, original_path): 
+    """
+    Save the highlighted sheet image to the 'highlighted_sheet' folder with a filename based on the original image.
+    """
+    folder = "server/highlighted_sheet"
+    os.makedirs(folder, exist_ok=True)
+    base = os.path.basename(original_path)
+    name, ext = os.path.splitext(base)
+    save_path = os.path.join(folder, f"{name}_highlighted{ext}")
+    cv2.imwrite(save_path, img)
+    print(f"Highlighted sheet saved to: {save_path}")
+
 def process_exam(student_img_path, answer_img_path):
 
     student_answer_color = cv2.imread(student_img_path)
@@ -419,15 +431,4 @@ def process_exam(student_img_path, answer_img_path):
 
     save_highlighted_sheet(final_img, student_img_path)
 
-def save_highlighted_sheet(img, original_path): 
-    """
-    Save the highlighted sheet image to the 'highlighted_sheet' folder with a filename based on the original image.
-    """
-    folder = "highlighted_sheet"
-    os.makedirs(folder, exist_ok=True)
-    base = os.path.basename(original_path)
-    name, ext = os.path.splitext(base)
-    save_path = os.path.join(folder, f"{name}_highlighted{ext}")
-    cv2.imwrite(save_path, img)
-    print(f"Highlighted sheet saved to: {save_path}")
 

@@ -1,19 +1,12 @@
 from pymongo import MongoClient
 import certifi
+import pandas as pd
 client = MongoClient("mongodb+srv://Cluster40353:pbl1com31@cluster40353.jwnefyf.mongodb.net/", tlsCAFile=certifi.where())
 
 db = client["Databases"]
 
-account_col = db["account"]
 basic_info_col = db["basic_info"]
 answer_col = db["answer"]
-
-def insert_account(fName, lName, student_code):
-    account_col.update_one(
-        {"fName": fName, "lName": lName, "ID": student_code},
-        {"$setOnInsert": {"fName": fName, "lName": lName, "ID": student_code}},
-        upsert=True
-    )
 
 def insert_data(fName, lName, student_code, subject, room, math_score=None, phy_score=None, chem_score=None, eng_score=None):
     update_fields = {
@@ -60,4 +53,33 @@ def insert_answer(student_code, subject, answers):
         upsert=True
     )
 
+def login(fName, lName, student_code):
+    account = basic_info_col.find_one({
+        "fName": fName,
+        "lName": lName,
+        "ID": student_code
+    })
+    
+    if account:
+        return True  
+    else:
+        return False 
 
+def get_students_by_room_df(room):
+    students = basic_info_col.find({"Room": room})
+    
+    data = []
+    for student in students:
+        data.append({
+            "fName": student.get("fName"),
+            "lName": student.get("lName"),
+            "ID": student.get("ID"),
+            "Room": student.get("Room"),
+            "Math_Score": student.get("Math_Score"),
+            "Phy_Score": student.get("Phy_Score"),
+            "Chem_Score": student.get("Chem_Score"),
+            "Eng_Score": student.get("Eng_Score")
+        })
+    
+    df = pd.DataFrame(data)
+    print(df)

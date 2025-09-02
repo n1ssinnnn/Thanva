@@ -11,24 +11,20 @@ import src.function as fn
 #For MacOS (Nay, OHm)
 pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
 
-# ขนาดและช่องว่าง
-bubble_w = 36
-bubble_h = 36
-col_gap_minor = 8
-row_gap_minor = 8
-
-# กำหนดตำแหน่งของ column ใหญ่
-major_column_positions = [
-    (812, 139),
-    (1480, 137),
-    (2148, 136),
-    (2814, 133)
-]
-
-# offset ในแนว y ของแต่ละ major row
-major_row_offsets = [0, 249, 498, 746, 995, 1243, 1491, 1739, 1988]
-
 def extract_user_answers(img_gray, threshold=150):
+    bubble_w = 36
+    bubble_h = 36
+    col_gap_minor = 8
+    row_gap_minor = 8
+
+    major_column_positions = [
+        (812, 139),
+        (1480, 137),
+        (2148, 136),
+        (2814, 133)
+    ]
+
+    major_row_offsets = [0, 249, 498, 746, 995, 1243, 1491, 1739, 1988]
     answers = []
 
     for col_major in range(4):
@@ -40,7 +36,7 @@ def extract_user_answers(img_gray, threshold=150):
 
             for row_minor in range(5):
                 max_fill = 0
-                answer_idx = 0  # ไม่ตอบ
+                answer_idx = 0  
                 filled_count = 0
 
                 for col_minor in range(13):
@@ -55,9 +51,8 @@ def extract_user_answers(img_gray, threshold=150):
                         filled_count += 1
                         if filled > max_fill:
                             max_fill = filled
-                            answer_idx = col_minor + 1  # ตอบข้อที่ n
+                            answer_idx = col_minor + 1  
 
-                # ถ้าฝนมากกว่า 1 ช่องในแถวเดียวกัน ให้ถือว่าผิด (answer_idx = 0)
                 if filled_count > 1:
                     answer_idx = 0
                 answers.append(answer_idx)
@@ -71,8 +66,20 @@ def grade_answers(user_answers, correct_answers):
 
 
 def highlight_per_question_by_answer(img_color, user_answers, correct_answers):
+    bubble_w = 36
+    bubble_h = 36
+    col_gap_minor = 8
+    row_gap_minor = 8
+
+    major_column_positions = [
+        (812, 139),
+        (1480, 137),
+        (2148, 136),
+        (2814, 133)
+    ]
+
+    major_row_offsets = [0, 249, 498, 746, 995, 1243, 1491, 1739, 1988]
     img_overlay = img_color.copy()
-    idx = 0
     idx = 0
     for col_major in range(4):
         start_x, base_y = major_column_positions[col_major]
@@ -83,7 +90,7 @@ def highlight_per_question_by_answer(img_color, user_answers, correct_answers):
                     break
                 user_ans = user_answers[idx]
                 correct_ans = correct_answers[idx]
-                # ข้อที่ได้คะแนน: highlight เขียวทั้ง row ของ bubble นั้น
+
                 if user_ans == correct_ans and user_ans != 0:
                     x1 = int(start_x)
                     y1 = int(start_y + row_minor * (bubble_h + row_gap_minor))
@@ -91,7 +98,7 @@ def highlight_per_question_by_answer(img_color, user_answers, correct_answers):
                     y2 = y1 + bubble_h
                     color = (0, 255, 0)
                     cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
-                # ข้อที่ไม่ได้คะแนน: highlight แดงทั้ง row ของ bubble นั้น
+
                 elif user_ans != correct_ans:
                     x1 = int(start_x)
                     y1 = int(start_y + row_minor * (bubble_h + row_gap_minor))
@@ -101,7 +108,6 @@ def highlight_per_question_by_answer(img_color, user_answers, correct_answers):
                     cv2.rectangle(img_overlay, (x1, y1), (x2, y2), color, -1)
                 idx += 1
 
-    # โปร่งใส: เห็นตัวอักษรข้างหลัง
     cv2.addWeighted(img_overlay, 0.4, img_color, 0.6, 0, img_color)
     return img_color
 
@@ -116,8 +122,20 @@ def get_per_question_results(user_answers, correct_answers):
             results.append(False)
     return results
 
-# ฟังก์ชัน highlight เฉพาะข้อผิด: highlight แดงเฉพาะ bubble ที่ควรฝนแต่ไม่ฝน หรือฝนผิด
 def highlight_wrong_bubbles(img_color, user_answers, correct_answers):
+    bubble_w = 36
+    bubble_h = 36
+    col_gap_minor = 8
+    row_gap_minor = 8
+
+    major_column_positions = [
+        (812, 139),
+        (1480, 137),
+        (2148, 136),
+        (2814, 133)
+    ]
+
+    major_row_offsets = [0, 249, 498, 746, 995, 1243, 1491, 1739, 1988]
     img_overlay = img_color.copy()
     idx = 0
     for col_major in range(4):
@@ -129,10 +147,10 @@ def highlight_wrong_bubbles(img_color, user_answers, correct_answers):
                     break
                 user_ans = user_answers[idx]
                 correct_ans = correct_answers[idx]
-                # เฉพาะข้อผิดเท่านั้น
+
                 if user_ans != correct_ans:
                     for col_minor in range(13):
-                        # กรณีควรฝนแต่ไม่ฝน หรือฝนผิดช่อง
+
                         if (col_minor+1 == correct_ans and user_ans != correct_ans) or (col_minor+1 == user_ans and user_ans != correct_ans):
                             x1 = int(start_x + col_minor * (bubble_w + col_gap_minor))
                             y1 = int(start_y + row_minor * (bubble_h + row_gap_minor))
@@ -146,18 +164,17 @@ def highlight_wrong_bubbles(img_color, user_answers, correct_answers):
 
 def score_answers_by_group(user_answers, correct_answers):
     assert len(user_answers) == len(correct_answers)
-    assert len(user_answers) % 5 == 0  # ต้องหาร 5 ลงตัว
+    assert len(user_answers) % 5 == 0 
 
     total_questions = len(user_answers) // 5
     score = 0
-    results = []  # เก็บ True/False ของแต่ละกลุ่ม 5 ช่อง
+    results = [] 
 
     for i in range(total_questions):
         u_group = user_answers[i*5:(i+1)*5]
         c_group = correct_answers[i*5:(i+1)*5]
 
         if all(u == 0 for u in u_group):
-            # ข้อนี้ไม่นับคะแนน
             results.append(None)
         elif u_group == c_group:
             score += 1
@@ -179,10 +196,6 @@ def extract_info_fields(img_gray):
     info = {}
     for key, (x, y, w, h) in fields.items():
         roi = img_gray[y:y+h, x:x+w]
-        #if roi.size == 0:
-        #    info[key] = ""
-        #    print(f"Warning: ROI for '{key}' is empty or out of bounds.")
-        #    continue                                                       *****
         if roi.ndim == 3:               
             roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
         roi = cv2.resize(roi, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
@@ -190,8 +203,6 @@ def extract_info_fields(img_gray):
         _, roi = cv2.threshold(roi, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         text = pytesseract.image_to_string(roi, config='--psm 7 -l eng+tha')
         clean_text = text.strip()
-        #if not clean_text:
-        #    print(f"Warning: No text detected for '{key}'.")               *****
         info[key] = clean_text
 
     return info
@@ -214,7 +225,6 @@ omr_student_digit_boxes = {
 }
 
 def extract_written_numbers_fields(img_input): 
-    # แปลงเป็น grayscale ถ้ายังไม่ใช่
     if img_input.ndim == 3:
         img_gray = cv2.cvtColor(img_input, cv2.COLOR_BGR2GRAY)
     else:
@@ -259,10 +269,10 @@ def extract_written_numbers_fields(img_input):
     omr_student_code = ''.join([omr_student_digits.get(f'student_digit_{i}', '?') for i in range(1, 10)])
 
     return {
-        "subject_id": omr_exam_number,           # ใช้ค่าจาก OMR
-        "student_id": omr_student_code,           # ใช้ค่าจาก OMR
-        "subject_id_ocr": exam_number,           # เก็บค่า OCR เดิมไว้
-        "student_id_ocr": student_code            # เก็บค่า OCR เดิมไว้
+        "subject_id": omr_exam_number,
+        "student_id": omr_student_code,
+        "subject_id_ocr": exam_number,
+        "student_id_ocr": student_code
     }
 
 def extract_omr_digits(img_gray, digit_boxes, threshold=150, min_fill_ratio=0.2):
@@ -362,16 +372,12 @@ def split_name(fullname):
         return '', ''
 
 def save_highlighted_sheet(img, original_path): 
-    """
-    Save the highlighted sheet image to the 'highlighted_sheet' folder with a filename based on the original image.
-    """
     folder = "server/highlighted_sheet"
     os.makedirs(folder, exist_ok=True)
     base = os.path.basename(original_path)
     name, ext = os.path.splitext(base)
     save_path = os.path.join(folder, f"{name}_highlighted{ext}")
     cv2.imwrite(save_path, img)
-    print(f"Highlighted sheet saved to: {save_path}")
 
 def process_exam(student_img_path, answer_img_path):
 
